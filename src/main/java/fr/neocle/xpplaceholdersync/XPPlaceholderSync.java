@@ -53,7 +53,8 @@ public class XPPlaceholderSync extends JavaPlugin {
     private void checkForUpdates() {
         new UpdateChecker(this, 121893).getLatestVersion(version -> {
             if (!getDescription().getVersion().equals(version)) {
-                getLogger().info("There is a new version available: " + version);
+                getLogger().warning("There is a new version available: " + version);
+                getLogger().warning("Download it at: https://www.spigotmc.org/resources/xp-placeholder-sync.121893/");
             } else {
                 getLogger().info("The plugin is up to date.");
             }
