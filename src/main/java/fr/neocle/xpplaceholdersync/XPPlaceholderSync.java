@@ -1,29 +1,30 @@
 package fr.neocle.xpplaceholdersync;
 
-import me.clip.placeholderapi.PlaceholderAPI;
+import org.bstats.bukkit.Metrics;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerExpChangeEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
 
-public class XPPlaceholderSync extends JavaPlugin implements Listener {
+import fr.neocle.xpplaceholdersync.listeners.XPEventListener;
+import fr.neocle.xpplaceholdersync.utils.UpdateChecker;
+import fr.neocle.xpplaceholdersync.utils.XPUpdateTask;
 
-    private String placeholder;
+public class XPPlaceholderSync extends JavaPlugin {
+
+    private static XPPlaceholderSync instance;
+    public String placeholder;
     private int updateRate;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
         loadConfigValues();
+        instance = this;
 
-        getServer().getPluginManager().registerEvents(this, this);
+        getServer().getPluginManager().registerEvents(new XPEventListener(), this);
 
         if (!Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             getLogger().severe("PlaceholderAPI is not installed or enabled!");
@@ -32,7 +33,12 @@ public class XPPlaceholderSync extends JavaPlugin implements Listener {
             getLogger().info("PlaceholderAPI found and hooked.");
         }
 
+        int pluginId = 24426;
+        new Metrics(this, pluginId);
+
         startUpdateTask();
+
+        checkForUpdates();
     }
 
     private void loadConfigValues() {
@@ -40,45 +46,19 @@ public class XPPlaceholderSync extends JavaPlugin implements Listener {
         updateRate = getConfig().getInt("update-rate", 5);
     }
 
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
-        updatePlayerXPBar(player);
-    }
-
-    @EventHandler
-    public void onPlayerExpChange(PlayerExpChangeEvent event) {
-        event.setAmount(0);
-    }
-
-    private void updatePlayerXPBar(Player player) {
-        String placeholderValue = PlaceholderAPI.setPlaceholders(player, "%" + placeholder + "%");
-
-        double xpValue;
-        try {
-            xpValue = Double.parseDouble(placeholderValue.replace(',', '.'));
-        } catch (NumberFormatException e) {
-            xpValue = 0.0;
-        }
-
-        int level = (int) Math.floor(xpValue);
-        float progress = (float) (xpValue - level);
-
-        player.setLevel(level);
-        player.setExp(progress);
-    }
-
     private void startUpdateTask() {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                for (Player player : Bukkit.getOnlinePlayers()) {
-                    updatePlayerXPBar(player);
-                }
-            }
-        }.runTaskTimer(this, 0, updateRate * 20L);
+        new XPUpdateTask(this).runTaskTimer(this, 0, updateRate * 20L);
     }
-    
+
+    private void checkForUpdates() {
+        new UpdateChecker(this, 121893).getLatestVersion(version -> {
+            if (!getDescription().getVersion().equals(version)) {
+                getLogger().info("There is a new version available: " + version);
+            } else {
+                getLogger().info("The plugin is up to date.");
+            }
+        });
+    }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -92,4 +72,9 @@ public class XPPlaceholderSync extends JavaPlugin implements Listener {
         }
         return false;
     }
+
+    public static XPPlaceholderSync getInstance() {
+        return instance;
+    }
+
 }

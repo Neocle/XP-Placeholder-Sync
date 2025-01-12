@@ -1,2 +1,4 @@
+# The placeholder from PlaceholderAPI that will replace the XP level, and the bar completion percentage
 placeholder: "yourplaceholder"
+# The time in seconds between each update of the XP bar and text
 update-rate: 5
