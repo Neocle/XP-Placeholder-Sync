@@ -1,14 +1,11 @@
 package fr.neocle.xpplaceholdersync.utils;
 
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.net.URLConnection;
-
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Scanner;
 
 public class UpdateChecker {
 
@@ -20,18 +17,18 @@ public class UpdateChecker {
         this.resourceId = resourceId;
     }
 
+    @SuppressWarnings("deprecation")
     public void getLatestVersion(VersionCallback callback) {
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            try {
-                @SuppressWarnings("deprecation")
-                URL url = new URL("https://api.spigotmc.org/legacy/update.php?resource=" + resourceId);
-                URLConnection connection = url.openConnection();
-                connection.setRequestProperty("User-Agent", "Mozilla/5.0");
-                InputStreamReader reader = new InputStreamReader(connection.getInputStream());
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            try (InputStream inputStream = new URL("https://api.spigotmc.org/legacy/update.php?resource=" + resourceId).openStream();
+                 Scanner scanner = new Scanner(inputStream)) {
 
-                JsonObject response = JsonParser.parseReader(reader).getAsJsonObject();
-                String latestVersion = response.get("version").getAsString();
-                callback.onComplete(latestVersion);
+                if (scanner.hasNext()) {
+                    String latestVersion = scanner.next();
+                    callback.onComplete(latestVersion);
+                } else {
+                    plugin.getLogger().warning("No version information found for resource " + resourceId);
+                }
             } catch (Exception e) {
                 plugin.getLogger().warning("Failed to check for updates: " + e.getMessage());
             }
