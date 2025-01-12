@@ -1,0 +1,13 @@
+name: XPPlaceholderSync
+api-version: 1.13
+version: "1.0"
+main: fr.neocle.xpplaceholdersync.XPPlaceholderSync
+author: Neocle
+description: Plugin to replace XP bar and text by a PlaceholderAPI output
+depend: [PlaceholderAPI]
+
+commands:
+  xps-reload:
+    description: Reload the XPPlaceholderSync plugin configuration
+    usage: /xps-reload
+    permission: xpplaceholdersync.reload
